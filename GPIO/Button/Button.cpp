@@ -47,7 +47,7 @@ void Button::interruptHandler(void* argument) {
         gpio_set_intr_type(button->_pin, GPIO_INTR_DISABLE);
         button->_tickCounter = xTaskGetTickCountFromISR();
         button->_released = false;
-        xTimerStartFromISR(button->_clickTimer, NULL);
+        xTimerStartFromISR(button->_clickTimer, nullptr);
     }
     portYIELD_FROM_ISR();
 }
