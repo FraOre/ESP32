@@ -8,8 +8,8 @@
 // FreeRTOS
 #include <freertos/FreeRTOS.h>
 
-// ESP-IDF
-#include <driver/gpio.h>
+// ESP32
+#include "GPIO/GPIO.h"
 
 class Button final {
     public:
@@ -22,8 +22,8 @@ class Button final {
 
     private:
         static constexpr TickType_t SHORT_PRESS_THRESHOLD = 1000;
+        GPIO _gpio;
         bool _released;
-        gpio_num_t _pin;
         uint8_t _clickCount;
         TimerHandle_t _clickTimer;
         TimerHandle_t _doubleClickTimer;
@@ -37,7 +37,6 @@ class Button final {
         std::vector<std::function<void()>> _onClickHandlers;
         std::vector<std::function<void()>> _onDoubleClickHandlers;
         std::vector<std::function<void()>> _onReleaseHandlers;
-        static void IRAM_ATTR interruptHandler(void* argument);
         static void clickTimerHandler(TimerHandle_t timer);
         static void doubleClickTimerHandler(TimerHandle_t timer);
 };

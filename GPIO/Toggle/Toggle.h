@@ -4,11 +4,8 @@
 // Standard C++
 #include <functional>
 
-// ESP-IDF
-#include <driver/gpio.h>
-
-// FreeRTOS
-#include <freertos/FreeRTOS.h>
+// ESP32
+#include "GPIO/GPIO.h"
 
 class Toggle final {
     public:
@@ -21,12 +18,11 @@ class Toggle final {
 
     private:
         bool _state;
-        gpio_num_t _pin;
+        GPIO _gpio;
         TimerHandle_t _timer;
         std::function<void()> _onLowHandler;
         std::function<void()> _onHighHandler;
         std::function<void(bool)> _onChangeHandler;
-        static void IRAM_ATTR interruptHandler(void* argument);
         static void timerHandler(TimerHandle_t timer);
 };
 

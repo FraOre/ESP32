@@ -1,28 +1,27 @@
 #include "Button/Button.h"
 
-Button::Button(uint8_t pin) {
-    _pin = static_cast<gpio_num_t>(pin);
+Button::Button(const uint8_t pin)
+    : _gpio(pin)
+{
     _released = true;
     _clickCount = 0;
     _tickCounter = 0;
     _clickTimer = xTimerCreate("Click Timer", pdMS_TO_TICKS(25), pdTRUE, this, clickTimerHandler);
     _doubleClickTimer = xTimerCreate("Double Click Timer", pdMS_TO_TICKS(250), pdFALSE, this, doubleClickTimerHandler);
-    gpio_config_t gpioConfig = {};
-    gpioConfig.pin_bit_mask = 1ULL << pin;
-    gpioConfig.mode = GPIO_MODE_INPUT;
-    gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    gpioConfig.pull_up_en = GPIO_PULLUP_ENABLE;
-    gpioConfig.intr_type = GPIO_INTR_LOW_LEVEL;
-    gpio_config(&gpioConfig);
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(_pin, interruptHandler, this);
+    _gpio.setInterruptType(GPIOInterruptType::LOW_LEVEL);
+    _gpio.addISRHandler([this]() -> void {
+        if (_released) {
+            _gpio.setInterruptType(GPIOInterruptType::DISABLED);
+            _tickCounter = xTaskGetTickCount();
+            _released = false;
+            xTimerStart(_clickTimer, 0);
+        }
+    });
 }
 
 Button::~Button() {
     xTimerDelete(_clickTimer, portMAX_DELAY);
     xTimerDelete(_doubleClickTimer, portMAX_DELAY);
-    gpio_isr_handler_remove(_pin);
-    gpio_reset_pin(_pin);
 }
 
 void Button::onClick(const std::function<void()>& handler) {
@@ -41,20 +40,9 @@ void Button::onRelease(const std::function<void()>& handler) {
     _onReleaseHandlers.push_back(handler);
 }
 
-void Button::interruptHandler(void* argument) {
-    auto* button = static_cast<Button*>(argument);
-    if (button->_released) {
-        gpio_set_intr_type(button->_pin, GPIO_INTR_DISABLE);
-        button->_tickCounter = xTaskGetTickCountFromISR();
-        button->_released = false;
-        xTimerStartFromISR(button->_clickTimer, nullptr);
-    }
-    portYIELD_FROM_ISR();
-}
-
 void Button::clickTimerHandler(TimerHandle_t timer) {
     auto* button = static_cast<Button*>(pvTimerGetTimerID(timer));
-    if (!gpio_get_level(button->_pin)) {
+    if (!button->_gpio.read()) {
         const TickType_t elapsedTime = pdTICKS_TO_MS(xTaskGetTickCount() - button->_tickCounter);
         for (auto&[pressTime, handler, alreadyHandled] : button->_onPressHandlers) {
             if (elapsedTime >= pressTime && !alreadyHandled) {
@@ -85,7 +73,7 @@ void Button::clickTimerHandler(TimerHandle_t timer) {
             }
         }
         xTimerStop(button->_clickTimer, 0);
-        gpio_set_intr_type(button->_pin, GPIO_INTR_LOW_LEVEL);
+        button->_gpio.setInterruptType(GPIOInterruptType::LOW_LEVEL);
         for (auto&[pressTime, handler, alreadyHandled] : button->_onPressHandlers) {
             alreadyHandled = false;
         }
