@@ -25,8 +25,8 @@ class HTTPServer final {
         HTTPServer();
         explicit HTTPServer(int port);
         void stop() const;
-        void on(const std::string& uri, HTTPMethod httpMethod, const std::function<void(HTTPRequest* httpRequest, HTTPResponse* httpResponse)>& handler) const;
-        void onNotFound(void (*handler)(HTTPRequest* httpRequest, HTTPResponse* httpResponse)) const;
+        void on(const std::string& uri, HTTPMethod httpMethod, const std::function<void(const HTTPRequest* httpRequest, const HTTPResponse* httpResponse)>& handler) const;
+        void onNotFound(const std::function<void(const HTTPRequest* httpRequest, const HTTPResponse* httpResponse)>& handler) const;
 
     private:
         httpd_handle_t _server;

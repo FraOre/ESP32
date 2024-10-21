@@ -17,15 +17,15 @@ void HTTPServer::stop() const
     httpd_stop(_server);
 }
 
-void HTTPServer::on(const std::string& uri, const HTTPMethod httpMethod, const std::function<void(HTTPRequest* httpRequest, HTTPResponse* httpResponse)>& handler) const
+void HTTPServer::on(const std::string& uri, const HTTPMethod httpMethod, const std::function<void(const HTTPRequest* httpRequest, const HTTPResponse* httpResponse)>& handler) const
 {
     httpd_uri_t httpdUri = {
         .uri = uri.c_str(),
-        .method = this->getMethod(httpMethod),
+        .method = getMethod(httpMethod),
         .handler = [](httpd_req_t* request) -> int {
-            const auto* contextHandler = static_cast<std::function<void(HTTPRequest*, HTTPResponse*)>*>(request->user_ctx);
-            HTTPRequest httpRequest(request);
-            HTTPResponse httpResponse(request);
+            const auto* contextHandler = static_cast<std::function<void(const HTTPRequest*, const HTTPResponse*)>*>(request->user_ctx);
+            const HTTPRequest httpRequest(request);
+            const HTTPResponse httpResponse(request);
             (*contextHandler)(&httpRequest, &httpResponse);
             return ESP_OK;
         },
@@ -34,7 +34,7 @@ void HTTPServer::on(const std::string& uri, const HTTPMethod httpMethod, const s
     httpd_register_uri_handler(_server, &httpdUri);
 }
 
-void HTTPServer::onNotFound(void (*handler)(HTTPRequest* httpRequest, HTTPResponse* httpResponse)) const
+void HTTPServer::onNotFound(const std::function<void(const HTTPRequest* httpRequest, const HTTPResponse* httpResponse)>& handler) const
 {
     on("/*", HTTPMethod::GET, handler);
 }
