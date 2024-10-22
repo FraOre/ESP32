@@ -21,19 +21,19 @@ bool Toggle::getState() const
     return _state;
 }
 
-void Toggle::onLow(const std::function<void()> &handler)
+void Toggle::onLow(const std::function<void()>& handler)
 {
-    _onLowHandler = handler;
+    _onLowHandlers.push_back(handler);
 }
 
-void Toggle::onHigh(const std::function<void()> &handler)
+void Toggle::onHigh(const std::function<void()>& handler)
 {
-    _onHighHandler = handler;
+    _onHighHandlers.push_back(handler);
 }
 
-void Toggle::onChange(const std::function<void(bool state)> &handler)
+void Toggle::onChange(const std::function<void(bool state)>& handler)
 {
-    _onChangeHandler = handler;
+    _onChangeHandlers.push_back(handler);
 }
 
 void Toggle::timerHandler(TimerHandle_t timer)
@@ -42,14 +42,18 @@ void Toggle::timerHandler(TimerHandle_t timer)
     const bool currentState = toggle->_gpio.read();
     if (currentState != toggle->_state) {
         toggle->_state = currentState;
-        if (toggle->_onChangeHandler) {
-            toggle->_onChangeHandler(toggle->_state);
+        for (const auto& handler : toggle->_onChangeHandlers) {
+            handler(toggle->_state);
         }
-        if (toggle->_state == false && toggle->_onLowHandler) {
-            toggle->_onLowHandler();
+        if (toggle->_state) {
+            for (const auto& handler : toggle->_onHighHandlers) {
+                handler();
+            }
         }
-        if (toggle->_state == true && toggle->_onHighHandler) {
-            toggle->_onHighHandler();
+        else {
+            for (const auto& handler : toggle->_onLowHandlers) {
+                handler();
+            }
         }
     }
 }
