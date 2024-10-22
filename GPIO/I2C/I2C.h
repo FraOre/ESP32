@@ -4,16 +4,13 @@
 // Standard C++
 #include <functional>
 
-// ESP-IDF
-#include <driver/gpio.h>
-#include <esp_attr.h>
-#include <esp_bit_defs.h>
-#include <rom/ets_sys.h>
-#include <driver/i2c.h>
-#include <hal/I2C_types.h>
-
 // FreeRTOS
 #include <freertos/FreeRTOS.h>
+
+// ESP-IDF
+#include <driver/gpio.h>
+#include <driver/i2c.h>
+#include <hal/I2C_types.h>
 
 class I2C final {
     public:

@@ -24,7 +24,6 @@ void I2C::initMaster(const int sdaPin, const int sclPin, const uint32_t clockSpe
     _config.scl_pullup_en = sclPullUpEnabled;
     _config.master.clk_speed = clockSpeed;
     _config.clk_flags = clockFlags;
-
     i2c_param_config(_port, &_config);
     i2c_driver_install(_port, _mode, _slaveReceiverBufferLength, _slaveTransmitterBufferLength, 0);
 }

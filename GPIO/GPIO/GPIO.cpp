@@ -18,6 +18,12 @@ GPIO::GPIO(uint8_t pin, const GPIODirection direction)
     gpio_config(&gpioConfig);
 }
 
+GPIO::~GPIO()
+{
+    gpio_isr_handler_remove(_pin);
+    gpio_reset_pin(_pin);
+}
+
 bool GPIO::read() const
 {
     return gpio_get_level(_pin);
@@ -58,6 +64,12 @@ void GPIO::setInterruptType(const GPIOInterruptType interruptType) const
         break;
         case GPIOInterruptType::ANY_EDGE:
             type = GPIO_INTR_ANYEDGE;
+        break;
+        case GPIOInterruptType::LOW_LEVEL:
+            type = GPIO_INTR_LOW_LEVEL;
+        break;
+        case GPIOInterruptType::HIGH_LEVEL:
+            type = GPIO_INTR_HIGH_LEVEL;
         break;
         default:
             type = GPIO_INTR_DISABLE;

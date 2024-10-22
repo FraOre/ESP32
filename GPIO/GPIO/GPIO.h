@@ -19,12 +19,15 @@ enum class GPIOInterruptType {
     DISABLED,
     NEGATIVE_EDGE,
     POSITIVE_EDGE,
-    ANY_EDGE
+    ANY_EDGE,
+    LOW_LEVEL,
+    HIGH_LEVEL
 };
 
 class GPIO final {
     public:
         explicit GPIO(uint8_t pin, GPIODirection direction = GPIODirection::INPUT);
+        ~GPIO();
         bool read() const;
         void high() const;
         void low() const;
