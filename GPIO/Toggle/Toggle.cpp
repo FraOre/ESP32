@@ -58,10 +58,10 @@ void Toggle::timerHandler(TimerHandle_t timer)
         if (toggle->_onChangeHandler) {
             toggle->_onChangeHandler(toggle->_state);
         }
-        else if (toggle->_state == false && toggle->_onLowHandler) {
+        if (toggle->_state == false && toggle->_onLowHandler) {
             toggle->_onLowHandler();
         }
-        else if (toggle->_state == true && toggle->_onHighHandler) {
+        if (toggle->_state == true && toggle->_onHighHandler) {
             toggle->_onHighHandler();
         }
     }
