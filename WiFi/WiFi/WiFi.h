@@ -1,32 +1,17 @@
 #ifndef __WIFI_H__
 #define __WIFI_H__
 
-#include <cstdint>
-#include <lwip/ip4_addr.h>
-#include "esp_netif_types.h"
-#include "esp_wifi_types.h"
-
 // Standard C++
 #include <string>
-#include <cstring>
 #include <vector>
 #include <functional>
 
 // ESP-IDF
-#include <nvs_flash.h>
-#include <esp_netif.h>
-#include <esp_netif_ip_addr.h>
-#include <esp_netif_types.h>
-#include <esp_event.h>
-#include <esp_bit_defs.h>
-#include <esp_event_base.h>
 #include <esp_wifi.h>
-#include <esp_wifi_types.h>
-#include <esp_wifi_default.h>
+#include <nvs_flash.h>
 
-// FreeRTOS
-#include <freertos/FreeRTOS.h>
-#include <freertos/event_groups.h>
+// Third party
+#include <lwip/ip4_addr.h>
 
 #define WIFI_STA_FAILED_BIT BIT0
 #define WIFI_STA_CONNECTED_BIT BIT1

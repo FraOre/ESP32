@@ -2,7 +2,6 @@
 #define __SYSTEM_H__
 
 // Standard C++
-#include <cstddef>
 #include <string>
 
 // ESP-IDF
@@ -11,9 +10,6 @@
 #include <esp_flash.h>
 #include <esp_heap_caps.h>
 #include <esp_partition.h>
-
-// ESP32
-#include "System.h"
 
 class System final {
     public:

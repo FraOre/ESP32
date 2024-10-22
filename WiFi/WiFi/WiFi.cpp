@@ -32,7 +32,7 @@ void WiFi::ipEventsHandler(void* argument, const esp_event_base_t eventBase, con
         xEventGroupSetBits(wiFi->_wiFiSTAEventGroup, WIFI_STA_CONNECTED_BIT);
         const auto* event = static_cast<ip_event_got_ip_t*>(eventData);
         char ip[IP4ADDR_STRLEN_MAX];
-        ip4addr_ntoa_r(reinterpret_cast<const ip4_addr_t *>(&event->ip_info.ip.addr), ip, IP4ADDR_STRLEN_MAX);
+        ip4addr_ntoa_r(reinterpret_cast<const ip4_addr_t*>(&event->ip_info.ip.addr), ip, IP4ADDR_STRLEN_MAX);
         for (const auto& _onConnectedCallback : wiFi->_onConnectedCallbacks) {
             _onConnectedCallback(ip);
         }
@@ -40,7 +40,7 @@ void WiFi::ipEventsHandler(void* argument, const esp_event_base_t eventBase, con
     else if (eventId == IP_EVENT_AP_STAIPASSIGNED) {
         const auto* event = static_cast<ip_event_ap_staipassigned_t*>(eventData);
         char clientIp[IP4ADDR_STRLEN_MAX];
-        ip4addr_ntoa_r(reinterpret_cast<const ip4_addr_t *>(&event->ip), clientIp, IP4ADDR_STRLEN_MAX);
+        ip4addr_ntoa_r(reinterpret_cast<const ip4_addr_t*>(&event->ip), clientIp, IP4ADDR_STRLEN_MAX);
         char clientMac[18];
         snprintf(clientMac, sizeof(clientMac), "%02X:%02X:%02X:%02X:%02X:%02X", event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]);
         for (const auto& _onAPConnectedCallback : wiFi->_onAPClientConnectedCallbacks) {
