@@ -1,0 +1,9 @@
+enum class HTTPStatusCode {
+    OK,
+    BAD_REQUEST,
+    UNAUTHORIZED,
+    FORBIDDEN,
+    NOT_FOUND,
+    TEMPORARY_REDIRECT,
+    INTERNAL_SERVER_ERROR
+};
