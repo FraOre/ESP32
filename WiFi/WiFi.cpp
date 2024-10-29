@@ -1,8 +1,7 @@
 #include "WiFi.h"
 
 WiFi::WiFi()
-    : _apConfig(), _staConfig(), _isConnected(false), _isConnecting(false), _manuallyDisconnect(false), _wiFiSTAEventGroup(nullptr)
-{}
+    : _apConfig(), _staConfig(), _isConnected(false), _isConnecting(false), _manuallyDisconnect(false), _wiFiSTAEventGroup(nullptr) {}
 
 WiFi::~WiFi()
 {
