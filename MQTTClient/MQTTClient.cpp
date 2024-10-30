@@ -13,8 +13,8 @@ void MQTTClient::onConnectedEvent(void* arguments, esp_event_base_t eventBase, i
 {
     auto* mqttClient = static_cast<MQTTClient*>(arguments);
     mqttClient->_isConnected = true;
-    for (const auto& handler : mqttClient->_onDataEventHandlers) {
-        esp_mqtt_client_subscribe(mqttClient->_client, handler.first.c_str(), 0);
+    for (const auto&[topic, _] : mqttClient->_onDataEventHandlers) {
+        esp_mqtt_client_subscribe(mqttClient->_client, topic.c_str(), 0);
     }
     for (const auto& handler : mqttClient->_onConnectedEventHandlers) {
         handler();
@@ -33,9 +33,9 @@ void MQTTClient::onDataEvent(void* arguments, esp_event_base_t eventBase, int32_
 {
     auto* mqttClient = static_cast<MQTTClient*>(arguments);
     const auto& event = static_cast<esp_mqtt_event_handle_t>(eventData);
-    for (const auto& handler : (mqttClient->_onDataEventHandlers).at(std::string(event->topic, event->topic_len))) {
-        MQTTMessage mqttMessage(event);
-        handler(mqttMessage);
+    for (const auto& handler : mqttClient->_onDataEventHandlers.at(std::string(event->topic, event->topic_len))) {
+        Message message(event);
+        handler(message);
     }
 }
 
@@ -49,13 +49,13 @@ void MQTTClient::onDisconnected(const std::function<void()>& handler)
     _onDisconnectedEventHandlers.push_back(handler);
 }
 
-void MQTTClient::onData(const std::string& topic, const std::function<void(const MQTTMessage& mqttMessage)>& handler)
+void MQTTClient::onData(const std::string& topic, const std::function<void(const Message& message)>& handler)
 {
-    if (_onDataEventHandlers.count(topic) > 0) {
+    if (_onDataEventHandlers.contains(topic)) {
        _onDataEventHandlers[topic].push_back(handler);
     }
     else {
-        std::vector<std::function<void(const MQTTMessage&)>> handlers;
+        std::vector<std::function<void(const Message&)>> handlers;
         handlers.push_back(handler);
         _onDataEventHandlers[topic] = handlers;
         if (_isConnected) {
@@ -90,5 +90,24 @@ void MQTTClient::publish(const std::string& topic, const std::string& data, cons
 
 void MQTTClient::publish(const std::string& topic, const std::string& data, const int qos, const bool retain) const
 {
-    esp_mqtt_client_publish(_client, topic.c_str(), data.c_str(), data.length(), qos, retain);
+    esp_mqtt_client_publish(_client, topic.c_str(), data.c_str(), static_cast<int>(data.length()), qos, retain);
+}
+
+MQTTClient::Message::Message(const esp_mqtt_event_handle_t& event)
+    : _event(event) {}
+
+std::string MQTTClient::Message::getTopic() const
+{
+    return {
+        _event->topic,
+        static_cast<std::string::size_type>(_event->topic_len)
+    };
+}
+
+std::string MQTTClient::Message::getData() const
+{
+    return {
+        _event->data,
+        static_cast<std::string::size_type>(_event->data_len)
+    };
 }

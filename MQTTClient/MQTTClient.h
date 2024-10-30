@@ -10,12 +10,20 @@
 // ESP-IDF
 #include <mqtt_client.h>
 
-// ESP32
-#include "Memory.h"
-#include "MQTTMessage/MQTTMessage.h"
-
 class MQTTClient final {
     public:
+        class Message final {
+            friend class MQTTClient;
+
+            public:
+                std::string getTopic() const;
+                std::string getData() const;
+
+            private:
+                const esp_mqtt_event_handle_t& _event;
+                explicit Message(const esp_mqtt_event_handle_t& event);
+        };
+
         MQTTClient();
         ~MQTTClient();
         void connect(const std::string& host, const std::string& clientId, const std::string& username = "", const std::string& password = "");
@@ -24,7 +32,7 @@ class MQTTClient final {
         void publish(const std::string& topic, const std::string& data, int qos, bool retain) const;
         void onConnected(const std::function<void()>& handler);
         void onDisconnected(const std::function<void()>& handler);
-        void onData(const std::string& topic, const std::function<void(const MQTTMessage& mqttMessage)>& handler);
+        void onData(const std::string& topic, const std::function<void(const Message& message)>& handler);
 
     private:
         bool _isConnected;
@@ -33,7 +41,7 @@ class MQTTClient final {
         static void onConnectedEvent(void* arguments, esp_event_base_t eventBase, int32_t eventId, void* eventData);
         std::vector<std::function<void()>> _onDisconnectedEventHandlers;
         static void onDisconnectedEvent(void* arguments, esp_event_base_t eventBase, int32_t eventId, void* eventData);
-        std::map<std::string, std::vector<std::function<void(const MQTTMessage& mqttMessage)>>> _onDataEventHandlers;
+        std::map<std::string, std::vector<std::function<void(const Message& message)>>> _onDataEventHandlers;
         static void onDataEvent(void* arguments, esp_event_base_t eventBase, int32_t eventId, void* eventData);
 };
 
