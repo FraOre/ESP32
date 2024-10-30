@@ -87,9 +87,9 @@ void GPIO::addISRHandler(const std::function<void()>& handler)
     gpio_isr_handler_add(_pin, interruptHandler, this);
 }
 
-void GPIO::interruptHandler(void* argument)
+void GPIO::interruptHandler(void* arguments)
 {
-    const auto* gpio = static_cast<GPIO*>(argument);
+    const auto* gpio = static_cast<GPIO*>(arguments);
     gpio->_isrHandler();
     portYIELD_FROM_ISR();
 }

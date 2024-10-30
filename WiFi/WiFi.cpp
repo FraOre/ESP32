@@ -22,9 +22,9 @@ void WiFi::init()
     esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wiFiEventsHandler, this, nullptr);
 }
 
-void WiFi::ipEventsHandler(void* argument, const esp_event_base_t eventBase, const int32_t eventId, void* eventData)
+void WiFi::ipEventsHandler(void* arguments, const esp_event_base_t eventBase, const int32_t eventId, void* eventData)
 {
-    const auto wiFi = static_cast<WiFi*>(argument);
+    const auto wiFi = static_cast<WiFi*>(arguments);
     if (eventId == IP_EVENT_STA_GOT_IP) {
         wiFi->_isConnected = true;
         wiFi->_isConnecting = false;
@@ -32,8 +32,8 @@ void WiFi::ipEventsHandler(void* argument, const esp_event_base_t eventBase, con
         const auto* event = static_cast<ip_event_got_ip_t*>(eventData);
         char ip[IP4ADDR_STRLEN_MAX];
         ip4addr_ntoa_r(reinterpret_cast<const ip4_addr_t*>(&event->ip_info.ip.addr), ip, IP4ADDR_STRLEN_MAX);
-        for (const auto& _onConnectedCallback : wiFi->_onConnectedCallbacks) {
-            _onConnectedCallback(ip);
+        for (const auto& handler : wiFi->_onConnectedHandlers) {
+            handler(ip);
         }
     }
     else if (eventId == IP_EVENT_AP_STAIPASSIGNED) {
@@ -42,15 +42,15 @@ void WiFi::ipEventsHandler(void* argument, const esp_event_base_t eventBase, con
         ip4addr_ntoa_r(reinterpret_cast<const ip4_addr_t*>(&event->ip), clientIp, IP4ADDR_STRLEN_MAX);
         char clientMac[18];
         snprintf(clientMac, sizeof(clientMac), "%02X:%02X:%02X:%02X:%02X:%02X", event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]);
-        for (const auto& _onAPConnectedCallback : wiFi->_onAPClientConnectedCallbacks) {
-            _onAPConnectedCallback(clientIp, clientMac);
+        for (const auto& handler : wiFi->_onAPClientConnectedHandlers) {
+            handler(clientIp, clientMac);
         }
     }
 }
 
-void WiFi::wiFiEventsHandler(void* argument, esp_event_base_t eventBase, const int32_t eventId, void* eventData)
+void WiFi::wiFiEventsHandler(void* arguments, esp_event_base_t eventBase, const int32_t eventId, void* eventData)
 {
-    const auto wiFi = static_cast<WiFi*>(argument);
+    const auto wiFi = static_cast<WiFi*>(arguments);
     if (eventId == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
     }
@@ -58,39 +58,39 @@ void WiFi::wiFiEventsHandler(void* argument, esp_event_base_t eventBase, const i
         if (wiFi->_isConnecting) {
             wiFi->_isConnecting = false;
             xEventGroupSetBits(wiFi->_wiFiSTAEventGroup, WIFI_STA_FAILED_BIT);
-            for (const auto& _onConnectionFailedCallback : wiFi->_onConnectionFailedCallbacks) {
-                _onConnectionFailedCallback();
+            for (const auto& handler : wiFi->_onConnectionFailedHandlers) {
+                handler();
             }
         }
         else if (wiFi->_manuallyDisconnect) {
             wiFi->_manuallyDisconnect = false;
-            for (const auto& _onDisconnectedCallback : wiFi->_onDisconnectedCallbacks) {
-                _onDisconnectedCallback();
+            for (const auto& handler : wiFi->_onDisconnectedHandlers) {
+                handler();
             }
         }
         else if (wiFi->_isConnected) {
             wiFi->_isConnected = false;
-            for (const auto& _onConnectionLostCallback : wiFi->_onConnectionLostCallbacks) {
-                _onConnectionLostCallback();
+            for (const auto& handler : wiFi->_onConnectionLostHandlers) {
+                handler();
             }
         }
     }
     else if (eventId == WIFI_EVENT_AP_START) {
-        for (const auto& _onAPStartedCallback : wiFi->_onAPStartedCallbacks) {
-            _onAPStartedCallback(reinterpret_cast<const char*>(wiFi->_apConfig.ap.ssid), reinterpret_cast<const char*>(wiFi->_apConfig.ap.password));
+        for (const auto& handler : wiFi->_onAPStartedHandlers) {
+            handler(reinterpret_cast<const char*>(wiFi->_apConfig.ap.ssid), reinterpret_cast<const char*>(wiFi->_apConfig.ap.password));
         }
     }
     else if (eventId == WIFI_EVENT_AP_STOP) {
-        for (const auto& _onAPStoppedCallback : wiFi->_onAPStoppedCallbacks) {
-            _onAPStoppedCallback(reinterpret_cast<const char*>(wiFi->_apConfig.ap.ssid), reinterpret_cast<const char*>(wiFi->_apConfig.ap.password));
+        for (const auto& handler : wiFi->_onAPStoppedHandlers) {
+            handler(reinterpret_cast<const char*>(wiFi->_apConfig.ap.ssid), reinterpret_cast<const char*>(wiFi->_apConfig.ap.password));
         }
     }
     else if (eventId == WIFI_EVENT_AP_STADISCONNECTED) {
         const auto* event = static_cast<wifi_event_ap_stadisconnected_t*>(eventData);
         char clientMac[18];
         snprintf(clientMac, sizeof(clientMac), "%02X:%02X:%02X:%02X:%02X:%02X", event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]);
-        for (const auto& _onAPClientDisconnectedCallback : wiFi->_onAPClientDisconnectedCallbacks) {
-            _onAPClientDisconnectedCallback(clientMac);
+        for (const auto& handler : wiFi->_onAPClientDisconnectedHandlers) {
+            handler(clientMac);
         }
     }
 }
@@ -117,49 +117,49 @@ void WiFi::stopAP()
     esp_wifi_set_mode(WIFI_MODE_STA);
 }
 
-void WiFi::onConnecting(const std::function<void()>& callback)
+void WiFi::onConnecting(const std::function<void()>& handler)
 {
-    _onConnectingCallbacks.push_back(callback);
+    _onConnectingHandlers.push_back(handler);
 }
 
-void WiFi::onConnected(const std::function<void(const std::string& ip)>& callback)
+void WiFi::onConnected(const std::function<void(const std::string& ip)>& handler)
 {
-    _onConnectedCallbacks.push_back(callback);
+    _onConnectedHandlers.push_back(handler);
 }
 
-void WiFi::onConnectionLost(const std::function<void()>& callback)
+void WiFi::onConnectionLost(const std::function<void()>& handler)
 {
-    _onConnectionLostCallbacks.push_back(callback);
+    _onConnectionLostHandlers.push_back(handler);
 }
 
-void WiFi::onConnectionFailed(const std::function<void()>& callback)
+void WiFi::onConnectionFailed(const std::function<void()>& handler)
 {
-    _onConnectionFailedCallbacks.push_back(callback);
+    _onConnectionFailedHandlers.push_back(handler);
 }
 
-void WiFi::onDisconnected(const std::function<void()>& callback)
+void WiFi::onDisconnected(const std::function<void()>& handler)
 {
-    _onDisconnectedCallbacks.push_back(callback);
+    _onDisconnectedHandlers.push_back(handler);
 }
 
-void WiFi::onAPStarted(const std::function<void(const std::string& ssid, const std::string& password)>& callback)
+void WiFi::onAPStarted(const std::function<void(const std::string& ssid, const std::string& password)>& handler)
 {
-    _onAPStartedCallbacks.push_back(callback);
+    _onAPStartedHandlers.push_back(handler);
 }
 
-void WiFi::onAPStopped(const std::function<void(const std::string& ssid, const std::string& password)>& callback)
+void WiFi::onAPStopped(const std::function<void(const std::string& ssid, const std::string& password)>& handler)
 {
-    _onAPStoppedCallbacks.push_back(callback);
+    _onAPStoppedHandlers.push_back(handler);
 }
 
-void WiFi::onAPClientConnected(const std::function<void(const std::string& clientIp, const std::string& clientMac)>& callback)
+void WiFi::onAPClientConnected(const std::function<void(const std::string& clientIp, const std::string& clientMac)>& handler)
 {
-    _onAPClientConnectedCallbacks.push_back(callback);
+    _onAPClientConnectedHandlers.push_back(handler);
 }
 
-void WiFi::onAPClientDisconnected(const std::function<void(const std::string& clientMac)>& callback)
+void WiFi::onAPClientDisconnected(const std::function<void(const std::string& clientMac)>& handler)
 {
-    _onAPClientDisconnectedCallbacks.push_back(callback);
+    _onAPClientDisconnectedHandlers.push_back(handler);
 }
 
 bool WiFi::isConnected() const
@@ -183,8 +183,8 @@ void WiFi::connect(const std::string& ssid, const std::string& password)
     esp_wifi_set_storage(WIFI_STORAGE_RAM);
     esp_wifi_start();
     _isConnecting = true;
-    for (const auto& _onConnectingCallback : _onConnectingCallbacks) {
-        _onConnectingCallback();
+    for (const auto& handler : _onConnectingHandlers) {
+        handler();
     }
     _wiFiSTAEventGroup = xEventGroupCreate();
     xEventGroupWaitBits(_wiFiSTAEventGroup, WIFI_STA_CONNECTED_BIT | WIFI_STA_FAILED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
@@ -196,8 +196,8 @@ void WiFi::reconnect() {
     }
     esp_wifi_connect();
     _isConnecting = true;
-    for (const auto& _onConnectingCallback : _onConnectingCallbacks) {
-        _onConnectingCallback();
+    for (const auto& handler : _onConnectingHandlers) {
+        handler();
     }
 }
 

@@ -9,9 +9,9 @@ MQTTClient::~MQTTClient()
     esp_mqtt_client_destroy(_client);
 }
 
-void MQTTClient::onConnectedEvent(void* argument, esp_event_base_t eventBase, int32_t eventId, void* eventData)
+void MQTTClient::onConnectedEvent(void* arguments, esp_event_base_t eventBase, int32_t eventId, void* eventData)
 {
-    auto* mqttClient = static_cast<MQTTClient*>(argument);
+    auto* mqttClient = static_cast<MQTTClient*>(arguments);
     mqttClient->_isConnected = true;
     for (const auto& handler : mqttClient->_onDataEventHandlers) {
         esp_mqtt_client_subscribe(mqttClient->_client, handler.first.c_str(), 0);
@@ -21,17 +21,17 @@ void MQTTClient::onConnectedEvent(void* argument, esp_event_base_t eventBase, in
     }
 }
 
-void MQTTClient::onDisconnectedEvent(void* argument, esp_event_base_t eventBase, int32_t eventId, void* eventData)
+void MQTTClient::onDisconnectedEvent(void* arguments, esp_event_base_t eventBase, int32_t eventId, void* eventData)
 {
-    auto* mqttClient = static_cast<MQTTClient*>(argument);
+    auto* mqttClient = static_cast<MQTTClient*>(arguments);
     for (const auto& handler : mqttClient->_onDisconnectedEventHandlers) {
         handler();
     }
 }
 
-void MQTTClient::onDataEvent(void* argument, esp_event_base_t eventBase, int32_t eventId, void* eventData)
+void MQTTClient::onDataEvent(void* arguments, esp_event_base_t eventBase, int32_t eventId, void* eventData)
 {
-    auto* mqttClient = static_cast<MQTTClient*>(argument);
+    auto* mqttClient = static_cast<MQTTClient*>(arguments);
     const auto& event = static_cast<esp_mqtt_event_handle_t>(eventData);
     for (const auto& handler : (mqttClient->_onDataEventHandlers).at(std::string(event->topic, event->topic_len))) {
         MQTTMessage mqttMessage(event);

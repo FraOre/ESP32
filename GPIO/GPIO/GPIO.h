@@ -40,7 +40,7 @@ class GPIO final {
         gpio_num_t _pin;
         std::function<void()> _isrHandler;
         static bool _isrServiceInstalled;
-        static void IRAM_ATTR interruptHandler(void* argument);
+        static void IRAM_ATTR interruptHandler(void* arguments);
 };
 
 #endif
