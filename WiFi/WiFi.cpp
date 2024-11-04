@@ -281,7 +281,7 @@ std::vector<WiFi::AccessPoint> WiFi::listAccessPoints() const
         memset(apRecords, 0, apNum * sizeof(wifi_ap_record_t));
         esp_wifi_scan_get_ap_records(&apNum, apRecords);
         for (int i = 0; i < apNum; i++) {
-            accessPoints.emplace_back(AccessPoint(reinterpret_cast<const char*>(apRecords[i].ssid), apRecords[i].rssi));
+            accessPoints.emplace_back(AccessPoint(reinterpret_cast<const char*>(apRecords[i].ssid), apRecords[i].rssi, apRecords[i].authmode != WIFI_AUTH_OPEN));
         }
         free(apRecords);
     }
@@ -398,8 +398,8 @@ void WiFi::onAPClientDisconnected(const std::function<void(const std::string& cl
     _onAPClientDisconnectedHandlers.push_back(handler);
 }
 
-WiFi::AccessPoint::AccessPoint(std::string ssid, const int rssi)
-    : _ssid(std::move(ssid)), _rssi(rssi) {}
+WiFi::AccessPoint::AccessPoint(std::string ssid, const int rssi, const bool isProtected)
+    : _ssid(std::move(ssid)), _rssi(rssi), _isProtected(isProtected) {}
 
 const std::string& WiFi::AccessPoint::getSSID() const
 {
@@ -411,7 +411,7 @@ int WiFi::AccessPoint::getRSSI() const
     return _rssi;
 }
 
-WiFi::Client::Client(std::string  mac, const int rssi)
+WiFi::Client::Client(std::string mac, const int rssi)
     : _mac(std::move(mac)), _rssi(rssi) {}
 
 const std::string& WiFi::Client::getMAC() const

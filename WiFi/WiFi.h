@@ -26,9 +26,10 @@ class WiFi final {
                 [[nodiscard]] int getRSSI() const;
 
             private:
-                AccessPoint(std::string ssid, int rssi);
+                AccessPoint(std::string ssid, int rssi, bool isProtected);
                 std::string _ssid;
                 int _rssi;
+                bool _isProtected;
         };
 
         class Client final {
@@ -39,9 +40,8 @@ class WiFi final {
                 [[nodiscard]] int getRSSI() const;
 
             private:
-                Client(std::string  mac, int rssi);
-
-            std::string _mac;
+                Client(std::string mac, int rssi);
+                std::string _mac;
                 int _rssi;
         };
 

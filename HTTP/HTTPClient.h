@@ -16,11 +16,13 @@ class HTTPClient final {
     public:
         class Response {
             friend class HTTPClient;
+
             public:
-                HTTPStatusCode getStatusCode() const;
-                const std::map<std::string, std::string>& getHeaders() const;
-                const std::string& getBody() const;
-                std::string getHeader(const std::string& name) const;
+                [[nodiscard]] HTTPStatusCode getStatusCode() const;
+                [[nodiscard]] const std::map<std::string, std::string>& getHeaders() const;
+                [[nodiscard]] const std::string& getBody() const;
+                [[nodiscard]] std::string getHeader(const std::string& name) const;
+
             private:
                 Response(HTTPStatusCode statusCode, std::string body, const std::map<std::string, std::string>& headers = {});
                 HTTPStatusCode _statusCode;
@@ -34,7 +36,7 @@ class HTTPClient final {
         explicit HTTPClient(const std::string& url, bool secure, int timeout);
         void setHeader(const std::string& name, const std::string& value);
         void setUserAgent(const std::string& userAgent);
-        Response get(const std::string& path, const std::map<std::string, std::string>& query = {}) const;
+        [[nodiscard]] Response get(const std::string& path, const std::map<std::string, std::string>& query = {}) const;
         Response post(const std::string& path, const std::string& payload);
         Response post(const std::string& path, const std::map<std::string, std::string>& payload);
         Response post(const std::string& path, const std::string& payload, bool isJson);
@@ -44,7 +46,7 @@ class HTTPClient final {
         bool _secure;
         int _timeout;
         std::map<std::string, std::string> _headers;
-        Response request(const HTTPMethod& method, const std::string& path, const std::string& payload) const;
+        [[nodiscard]] Response request(const HTTPMethod& method, const std::string& path, const std::string& payload) const;
         struct httpEventHandlerPayload {
             std::map<std::string, std::string> headers;
             std::string body;

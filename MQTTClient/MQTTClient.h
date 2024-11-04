@@ -16,8 +16,8 @@ class MQTTClient final {
             friend class MQTTClient;
 
             public:
-                std::string getTopic() const;
-                std::string getData() const;
+                [[nodiscard]] std::string getTopic() const;
+                [[nodiscard]] std::string getData() const;
 
             private:
                 const esp_mqtt_event_handle_t& _event;
