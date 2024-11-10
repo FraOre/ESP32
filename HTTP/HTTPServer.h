@@ -21,6 +21,8 @@ class HTTPServer final {
             public:
                 static std::string urlDecode(std::string string);
                 [[nodiscard]] std::string getBody() const;
+                [[nodiscard]] bool hasHeader(const std::string& name) const;
+                [[nodiscard]] std::string getHeader(const std::string& name) const;
                 [[nodiscard]] std::map<std::string, std::string> parseForm() const;
 
             private:
@@ -32,10 +34,12 @@ class HTTPServer final {
             friend class HTTPServer;
 
             public:
-                void add(const std::string& text) const;
+                void append(const std::string& text) const;
                 void send() const;
                 void send(const std::string& text) const;
                 void redirect(const std::string& url) const;
+                void setHeader(const std::string& name, const std::string& value) const;
+                void setHeaders(const std::map<std::string, std::string>& headers) const;
                 void setStatusCode(HTTPStatusCode statusCode) const;
 
             private:
@@ -46,13 +50,16 @@ class HTTPServer final {
 
         HTTPServer();
         explicit HTTPServer(int port);
+        ~HTTPServer();
         void stop() const;
+        void on(const std::string& uri, const std::function<void(const Request* request, const Response* response)>& handler) const;
         void on(const std::string& uri, HTTPMethod method, const std::function<void(const Request* request, const Response* response)>& handler) const;
         void onNotFound(const std::function<void(const Request* request, const Response* response)>& handler) const;
 
     private:
         httpd_handle_t _server;
         static httpd_method_t getMethod(HTTPMethod method);
+        std::vector<std::function<void(const Request* request, const Response* response)>*> _handlers;
 };
 
 #endif

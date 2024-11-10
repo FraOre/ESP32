@@ -122,11 +122,6 @@ HTTPStatusCode HTTPClient::Response::getStatusCode() const
     return _statusCode;
 }
 
-const std::string& HTTPClient::Response::getBody() const
-{
-    return _body;
-}
-
 const std::map<std::string, std::string>& HTTPClient::Response::getHeaders() const
 {
     return _headers;
@@ -136,4 +131,9 @@ std::string HTTPClient::Response::getHeader(const std::string& name) const
 {
     const auto item = _headers.find(name);
     return item != _headers.end() ? item->second : "";
+}
+
+const std::string& HTTPClient::Response::getBody() const
+{
+    return _body;
 }

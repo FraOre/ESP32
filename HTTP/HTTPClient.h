@@ -19,9 +19,9 @@ class HTTPClient final {
 
             public:
                 [[nodiscard]] HTTPStatusCode getStatusCode() const;
+                [[nodiscard]] std::string getHeader(const std::string& name) const;
                 [[nodiscard]] const std::map<std::string, std::string>& getHeaders() const;
                 [[nodiscard]] const std::string& getBody() const;
-                [[nodiscard]] std::string getHeader(const std::string& name) const;
 
             private:
                 Response(HTTPStatusCode statusCode, std::string body, const std::map<std::string, std::string>& headers = {});

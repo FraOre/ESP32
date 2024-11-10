@@ -12,13 +12,29 @@ HTTPServer::HTTPServer(const int port)
     httpd_start(&_server, &config);
 }
 
+HTTPServer::~HTTPServer()
+{
+    for (const auto* handler : _handlers) {
+        delete handler;
+    }
+    _handlers.clear();
+}
+
 void HTTPServer::stop() const
 {
     httpd_stop(_server);
 }
 
+void HTTPServer::on(const std::string& uri, const std::function<void(const Request* request, const Response* response)>& handler) const
+{
+    on(uri, HTTPMethod::GET, handler);
+}
+
 void HTTPServer::on(const std::string& uri, const HTTPMethod method, const std::function<void(const Request* request, const Response* response)>& handler) const
 {
+    auto* handlerPointer = new std::function(handler);
+    _handlers.push_back(handlerPointer);
+
     httpd_uri_t httpdUri = {
         .uri = uri.c_str(),
         .method = getMethod(method),
@@ -29,7 +45,7 @@ void HTTPServer::on(const std::string& uri, const HTTPMethod method, const std::
             (*contextHandler)(&request, &response);
             return ESP_OK;
         },
-        .user_ctx = new std::function(handler)
+        .user_ctx = handlerPointer
     };
     httpd_register_uri_handler(_server, &httpdUri);
 }
@@ -67,9 +83,25 @@ std::string HTTPServer::Request::getBody() const {
     return { body };
 }
 
+bool HTTPServer::Request::hasHeader(const std::string& name) const
+{
+    return httpd_req_get_hdr_value_len(_request, name.c_str()) > 0;
+}
+
+std::string HTTPServer::Request::getHeader(const std::string& name) const
+{
+    const size_t headerLength = httpd_req_get_hdr_value_len(_request, name.c_str());
+    if (headerLength) {
+        char header[headerLength + 1];
+        httpd_req_get_hdr_value_str(_request, name.c_str(), header, sizeof(header));
+        return { header };
+    }
+    return "";
+}
+
 std::map<std::string, std::string> HTTPServer::Request::parseForm() const
 {
-    std::map<std::string, std::string> form;
+    std::map<std::string, std::string> data;
     std::string key, value;
     bool isKey = true;
     for (const auto character : getBody()) {
@@ -77,7 +109,7 @@ std::map<std::string, std::string> HTTPServer::Request::parseForm() const
             isKey = false;
         }
         else if (character == '&') {
-            form[key] = urlDecode(value);
+            data[key] = urlDecode(value);
             key.clear();
             value.clear();
             isKey = true;
@@ -91,24 +123,24 @@ std::map<std::string, std::string> HTTPServer::Request::parseForm() const
             }
         }
     }
-    form[key] = urlDecode(value);
-    return form;
+    data[key] = urlDecode(value);
+    return data;
 }
 
 std::string HTTPServer::Request::urlDecode(std::string string)
 {
-    size_t idxReplaced = 0;
-    size_t idxFound = string.find('+');
-    while (idxFound != std::string::npos) {
-        string.replace(idxFound, 1, 1, ' ');
-        idxFound = string.find('+', idxFound + 1);
+    size_t replacedIndex = 0;
+    size_t foundIndex = string.find('+');
+    while (foundIndex != std::string::npos) {
+        string.replace(foundIndex, 1, 1, ' ');
+        foundIndex = string.find('+', foundIndex + 1);
     }
-    idxFound = string.find('%');
-    while (idxFound != std::string::npos) {
-        if (idxFound <= string.length() + 3) {
+    foundIndex = string.find('%');
+    while (foundIndex != std::string::npos) {
+        if (foundIndex <= string.length() + 3) {
             char hex[2] = {
-                string[idxFound + 1],
-                string[idxFound + 2]
+                string[foundIndex + 1],
+                string[foundIndex + 2]
             };
             unsigned char value = 0;
             for (const char n : hex) {
@@ -126,11 +158,11 @@ std::string HTTPServer::Request::urlDecode(std::string string)
                     goto skipChar;
                 }
             }
-            string.replace(idxFound, 3, 1, static_cast<char>(value));
+            string.replace(foundIndex, 3, 1, static_cast<char>(value));
         }
         skipChar:
-        idxReplaced = idxFound + 1;
-        idxFound = string.find('%', idxReplaced);
+        replacedIndex = foundIndex + 1;
+        foundIndex = string.find('%', replacedIndex);
     }
     return { string };
 }
@@ -138,7 +170,7 @@ std::string HTTPServer::Request::urlDecode(std::string string)
 HTTPServer::Response::Response(httpd_req_t* request)
     : _request(request) {}
 
-void HTTPServer::Response::add(const std::string& text) const
+void HTTPServer::Response::append(const std::string& text) const
 {
     httpd_resp_sendstr_chunk(_request, text.c_str());
 }
@@ -151,6 +183,18 @@ void HTTPServer::Response::send() const
 void HTTPServer::Response::send(const std::string& text) const
 {
     httpd_resp_sendstr(_request, text.c_str());
+}
+
+void HTTPServer::Response::setHeader(const std::string& name, const std::string& value) const
+{
+    httpd_resp_set_hdr(_request, name.c_str(), value.c_str());
+}
+
+void HTTPServer::Response::setHeaders(const std::map<std::string, std::string>& headers) const
+{
+    for (const auto& [name, value] : headers) {
+        setHeader(name, value);
+    }
 }
 
 void HTTPServer::Response::setStatusCode(const HTTPStatusCode statusCode) const
