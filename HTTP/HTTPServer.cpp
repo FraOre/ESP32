@@ -4,8 +4,8 @@ HTTPServer::HTTPServer() :
     HTTPServer(80) {}
 
 HTTPServer::HTTPServer(const int port)
+    : _server(nullptr)
 {
-    _server = nullptr;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = port;
     config.uri_match_fn = httpd_uri_match_wildcard;

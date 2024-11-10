@@ -53,4 +53,5 @@ class HTTPClient final {
         };
         static esp_err_t httpEventHandler(esp_http_client_event_t* event);
 };
+
 #endif

@@ -78,6 +78,7 @@ void MQTTClient::connect(const std::string& host, const std::string& clientId, c
     esp_mqtt_client_register_event(_client, MQTT_EVENT_DISCONNECTED, &onDisconnectedEvent, this);
     esp_mqtt_client_start(_client);
 }
+
 void MQTTClient::publish(const std::string& topic, const std::string& data) const
 {
     publish(topic, data, 0, false);
