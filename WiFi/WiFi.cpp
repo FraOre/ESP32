@@ -411,6 +411,11 @@ int WiFi::AccessPoint::getRSSI() const
     return _rssi;
 }
 
+bool WiFi::AccessPoint::isProtected() const
+{
+    return _isProtected;
+}
+
 WiFi::Client::Client(std::string mac, const int rssi)
     : _mac(std::move(mac)), _rssi(rssi) {}
 

@@ -36,6 +36,7 @@ class HTTPClient final {
         explicit HTTPClient(const std::string& url, bool secure, int timeout);
         void setHeader(const std::string& name, const std::string& value);
         void setUserAgent(const std::string& userAgent);
+        void setContentType(const std::string& contentType);
         [[nodiscard]] Response get(const std::string& path, const std::map<std::string, std::string>& query = {}) const;
         Response post(const std::string& path, const std::string& payload);
         Response post(const std::string& path, const std::map<std::string, std::string>& payload);

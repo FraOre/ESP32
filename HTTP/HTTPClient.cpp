@@ -22,6 +22,11 @@ void HTTPClient::setUserAgent(const std::string& userAgent)
     setHeader("User-Agent", userAgent);
 }
 
+void HTTPClient::setContentType(const std::string& contentType)
+{
+    setHeader("Content-Type", contentType);
+}
+
 HTTPClient::Response HTTPClient::get(const std::string& path, const std::map<std::string, std::string>& query) const
 {
     std::string payload;
@@ -54,7 +59,7 @@ HTTPClient::Response HTTPClient::post(const std::string& path, const std::map<st
 HTTPClient::Response HTTPClient::post(const std::string& path, const std::string& payload, const bool isJson)
 {
     if (isJson) {
-        setHeader("Content-Type", "application/json");
+        setContentType("application/json");
     }
     return request(HTTPMethod::POST, path, payload);
 }

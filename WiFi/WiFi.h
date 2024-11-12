@@ -24,6 +24,7 @@ class WiFi final {
             public:
                 [[nodiscard]] const std::string& getSSID() const;
                 [[nodiscard]] int getRSSI() const;
+                [[nodiscard]] bool isProtected() const;
 
             private:
                 AccessPoint(std::string ssid, int rssi, bool isProtected);

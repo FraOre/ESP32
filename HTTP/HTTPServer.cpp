@@ -12,30 +12,22 @@ HTTPServer::HTTPServer(const int port)
     httpd_start(&_server, &config);
 }
 
-HTTPServer::~HTTPServer()
-{
-    for (const auto* handler : _handlers) {
-        delete handler;
-    }
-    _handlers.clear();
-}
-
 void HTTPServer::stop() const
 {
     httpd_stop(_server);
 }
 
-void HTTPServer::on(const std::string& uri, const std::function<void(const Request* request, const Response* response)>& handler) const
+void HTTPServer::on(const std::string& uri, const std::function<void(const Request* request, const Response* response)>& handler)
 {
     on(uri, HTTPMethod::GET, handler);
 }
 
-void HTTPServer::on(const std::string& uri, const HTTPMethod method, const std::function<void(const Request* request, const Response* response)>& handler) const
+void HTTPServer::on(const std::string& uri, const HTTPMethod method, const std::function<void(const Request* request, const Response* response)>& handler)
 {
-    auto* handlerPointer = new std::function(handler);
-    _handlers.push_back(handlerPointer);
+    auto handlerPointer = std::make_unique<std::function<void(const Request*, const Response*)>>(handler);
+    _handlers.push_back(std::move(handlerPointer));
 
-    httpd_uri_t httpdUri = {
+    const httpd_uri_t httpdUri = {
         .uri = uri.c_str(),
         .method = getMethod(method),
         .handler = [](httpd_req_t* contextRequest) -> int {
@@ -45,12 +37,12 @@ void HTTPServer::on(const std::string& uri, const HTTPMethod method, const std::
             (*contextHandler)(&request, &response);
             return ESP_OK;
         },
-        .user_ctx = handlerPointer
+        .user_ctx = _handlers.back().get()
     };
     httpd_register_uri_handler(_server, &httpdUri);
 }
 
-void HTTPServer::onNotFound(const std::function<void(const Request* request, const Response* response)>& handler) const
+void HTTPServer::onNotFound(const std::function<void(const Request* request, const Response* response)>& handler)
 {
     on("/*", HTTPMethod::GET, handler);
 }
@@ -74,7 +66,13 @@ httpd_method_t HTTPServer::getMethod(const HTTPMethod method)
 }
 
 HTTPServer::Request::Request(httpd_req_t* request)
-    : _request(request) {}
+    : _request(request)
+{
+    sockaddr_in6 addressIn = {};
+    socklen_t addressLen = sizeof(addressIn);
+    lwip_getpeername(httpd_req_to_sockfd(request), reinterpret_cast<sockaddr*>(&addressIn), &addressLen);
+    _clientIP = inet_ntoa(addressIn.sin6_addr.un.u32_addr[3]);
+}
 
 std::string HTTPServer::Request::getBody() const {
     char body[_request->content_len + 1];
@@ -97,6 +95,11 @@ std::string HTTPServer::Request::getHeader(const std::string& name) const
         return { header };
     }
     return "";
+}
+
+std::string HTTPServer::Request::getClientIP() const
+{
+    return _clientIP;
 }
 
 std::map<std::string, std::string> HTTPServer::Request::parseForm() const
